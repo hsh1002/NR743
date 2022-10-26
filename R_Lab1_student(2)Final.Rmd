@@ -1,0 +1,184 @@
+---
+title: 'R Lab 1: Data Cleaning, Data Summarizing'
+author: 'Lee Hildebrand'
+date: 'September 21, 2022'
+output:  
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+sediment <- read.csv("~/Fall2022gradSchool/NR843_Sediment.csv",skip=4,  header=TRUE, stringsAsFactors = TRUE)
+summary(sediment)
+head(sediment)
+sediment <- sediment %>%
+rename(Station=STATION.ID)
+# Code provided by Clarice Perryman, modified by Alma Hernandez
+```
+
+*Lab 1: Welcome to R data cleaning and data summarizing* 
+
+The first thing we need to do is install and load all of the packages we need. Installing may take some time (minutes, not hours) and you only need to do it once. You will need to load (or open) these packages every session. The library() command loads the packages. 
+
+Please add a # in front of the install.packages() line after running this code chunk and installing all of the needed packages. 
+
+```{r}
+install.packages(c("tidyverse", "ggpubr","maps", "mapdata", "ggmap", "ggsn"))
+
+library("tidyverse")
+library("ggpubr")
+library("ggmap")
+library("maps")
+library("mapdata")
+library('ggsn')
+```
+
+Next we will load in our dataset. We are working with a dataset of sediment geochemistry (metals, organic carbon, pesticides) collected around coastal NH. You will need to replace the filepath with what is in the commented out line. 
+
+```{r}
+# for RCloud this file path is "/cloud/project/Sediment.csv"
+sediment <- read.csv("~/Desktop/CLOSES GAP R 2021/Sediment.csv", skip = 4, header = TRUE, stringsAsFactors = TRUE)
+```
+
+Let's take a peak at what's in this dataset. We can either use the built in summary() function to see a summary of each column of each dataframe or use the head() function to just see the top few rows. 
+
+```{r}
+#try using summary() and head() on the sediment data here: 
+summary()
+head()
+```
+
+Our first data cleaning task is to rename columns to shorter, more intuitive names. We will be using the "rename" command from dplyr. We are also using a pipe - %>% - which connects commands we want done on the same object! I've written the code to rename the 2 columns from the sediment data frame, you will need to rename the 4 other columns listed in the comment in the code chunk below following my example. 
+
+HINT: when using rename, the syntax is (New = Old)
+```{r}
+
+
+# (2 points) Rename the EVNT_LAT, EVNT_LNG, EVNTDATE, and PEST.Total columns in the sediment data frame to lat, long, Date, Pesticides following the example above. 
+
+head(sediment)
+sediment <- sediment %>%
+  rename(long=EVNT_LNG)
+sediment <- sediment %>%
+  rename(Date=EVNTDATE)
+sediment <- sediment %>%
+  rename(Pesticides=PEST.Total)
+sediment <- sediment %>%
+  rename(Location=LOCATION.NAME)
+view(sediment)
+summary(sediment)
+
+sediment<-sediment%>%
+  rename(Piscataqua = Piscataqua_River)
+# sediment<-sediment$LOCATION.NAME %>%
+ # recode("Piscataqua_River"="Piscataqua River") %>% 
+  #recode("Hampton River/ Hampton Harbor"="Hampton")
+
+```
+
+Some of the names in the location columns don't match - e.x. there is both "Piscataqua River" and "Piscataqua_River". These are the same! We are going to use the "recode" command to correct them. I corrected 2 of the erroneous location names in the example. There are 3 additional erroneous names you will need to correct. 
+
+HINT 1: Enter levels(sediment$Location) into the console to see which additional names need corrected, then follow my example to recode them! Don't forget to use %>% to connect the parts. 
+
+HINT 2: when using recode, the syntax is ("oldname" = "newname")
+
+```{r}
+
+
+# (2 points) Recode the 3 additional erroneous location names in the sediment data frame: 
+
+sediment$Location<- sediment$Location %>% 
+
+```
+
+Now we need to change the data type of a column. R has many data types - factors (grouping variables), strings, characters, numbers, integers, dates, etc. Knowing what data type a column is and how to change it if needed is an important task! Here we are changing the date column from "Factor" to "Date." We are also isolating the year each sample was collected and making that a factor (a grouping variable) to plot annual time series later. 
+
+Just run this code chunk - nothing to change here! But good to have an example of this kind of data cleaning step. 
+
+FYI: Capitalization matters A LOT when working with dates. The input for Dates will depend on how your dates are written (i.e. mm/dd/yyyy and mm/dd/yy have different needed inputs!) Find out more here: https://campus.datacamp.com/courses/intermediate-r-for-finance/dates?ex=6 
+```{r}
+sediment$Date <- as.Date(sediment$Date, format = "%m / %d / %y")
+sediment$Year <- as.factor(format(sediment$Date, "%Y"))
+summary(sediment)
+```
+
+We are now going use the filter command from dplyr to remove locations with poor replication (n < 3). In the example, I am removing 1 location with n < 3 and the years 2010 and 2015 (for time series later, as the data was not collected in all consecutive years 2007-2015). There are 2 other locations with poor replication that need removed. Follow the example code to remove them! 
+
+HINT: enter in summary(sediment$Location) in the console to see which 2 other locations have < 3 samples 
+
+You can find out more about all of the ways to use the Filter command (and how the syntax changes) here: https://blog.exploratory.io/filter-data-with-dplyr-76cf5f1a258e 
+```{r}
+sediment <- sediment %>%
+  filter(Location != "South Mill Pond") %>%
+  filter(!Year %in% c("2010", "2015")) 
+
+# (2 points) use the line filtering out 2010 and 2015 as an example for the syntax to remove the other 2 locations w/ n < 3! 
+sediment <- sediment %>%
+  filter(Location != "Rye Harbor") %>%
+  filter(Location != "Sqaumscott River") 
+```
+
+To end the content for Lab 1, we will explore 2 ways of summarizing data. First, we will use the Base R summary command. This will give us min, max, median, mean, quartiles, and # of NAs for our column of interest (given the column is a numeric or integer data type! summary reports different output for different data types). 
+
+I provided an example for the Hg column. Try this out yourself with the Cd column! 
+
+```{r}
+summary(sediment$Hg)
+summary(sediment$Cd)
+
+# (1 point) write the line to summarize the Cd column here: 
+
+# (1 point) What is the mean of the Cd column? 0.5661
+# (1 point) What is the mean of the Hg column? 0.17215
+# (1 point) What is the median of the Cd column? 0.4000
+```
+
+The summary command is great for a first glance at your data - but it lacks 2 things: 1) it doesn't provide a measure of variance, like standard deviation, and 2) we know these columns contain data from different locations, and it would be great to know if the mean, etc varied between them! 
+
+We'll first use a Base R command to get the standard deviation of sediment Hg and Cd concentrations. Follow my example using Hg to calculate the standard deviation of sediment Cd concentrations. 
+
+Notice the na.rm = TRUE I used here. This tells R to IGNORE NA values and is important for a lot of R tasks! 
+
+```{r}
+sd(sediment$Cd, na.rm = TRUE)
+
+# (1 point) calculate the standard deviation for Cd here: 0.1307783
+
+# (2 points) What is the standard deviation of the Cd column? And the standard deviation of Hg?  0.47281 and 0.1307783 respectively
+```
+
+Now we are going to work through an example that will provide summary stats for Hg and Cd concentrations for each location. We're also mixing dyplr commands here for the first time, and this shows how the pipe character is really helpful! It helps us to not repeat similar tasks over and over AND it also helps us combine multiple different tasks. 
+
+In the example, I am 1) creating a new object, 2) selecting the Location and Hg columns, 3) indicating that I want to group the values by the sample location, and 3) asking R to calculate a mean, standard deviation, and median value for each location. Please do the same for Cd! You will get 2 outputs  - the first with Hg values and the 2nd with Cd values. 
+
+
+```{r}
+Hg_summary <- sediment %>%
+  select(Location, Hg) %>%
+  group_by(Location) %>%
+  summarise_all(funs(mean, sd), na.rm = TRUE)
+Hg_summary
+
+summary(sediment$Location)
+view(sediment)
+
+Cd_summary <- sediment %>%
+  select(Location, Cd) %>%
+  group_by(Location) %>%
+  summarise_all(funs(mean, median, sd), na.rm = TRUE)
+Cd_summary
+view(Cd_summary)
+# (2 points) use the example above to summarize sediment Cd concentration by Location here:
+Cd_summary <- sediment %>%
+  
+Cd_summary
+
+# (1 point) What is the mean of Cd in Little Harbor? 	 0.3615385
+# (1 point) What is the mean of Cd in Piscataqua River? 	 0.6372549 and 0.3333333 (recode didn't work)
+# (1 point) What is the median of Cd in Hampton? 0.10
+# (1 point) What is the sd of Cd in Portsmouth Harbor? 0.3714835
+# (1 point) What is the sd of Cd in Great Bay? 0.4526653 	 and 0.1707825 (recode didn't work)
+
+```
